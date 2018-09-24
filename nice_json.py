@@ -14,7 +14,7 @@ class json_processor:
         self.json_string=""
         self.json_string_length=0
         self.indent = "    "
-        
+
     # Reads the file at the source url, or the following command line argument, if
     # source_url is set to None
     def load_json(self, source_url):
@@ -31,7 +31,7 @@ class json_processor:
         else:
             print("Unrecogniced indent type, indent unchanged. " +
                   "Current value is \"" + self.indent+"\"")
-    
+
     # The default value of -1 indicates that the indentation process should end
     # at the final character of the string
     def indent_json(self, start=0, end=-1):
@@ -51,7 +51,7 @@ class json_processor:
                 result_strings.append("".join([self.indent for i in range(indent_depth)]))
             elif(current == ':'):
                 result_strings.append(' ')
-                
+
             elif(current == ','):
                 result_strings.append('\n')
                 result_strings.append("".join([self.indent for i in range(indent_depth)]))
@@ -61,7 +61,7 @@ class json_processor:
                 result_strings = result_strings[:len(result_strings)-1]+['\n']
                 result_strings.append("".join([self.indent for i in range(indent_depth)]))
                 result_strings += [current]
-               
+
         result = "".join(result_strings)
         self.json_string_length = len(result)
         self.json_string = result
@@ -70,7 +70,7 @@ class json_processor:
     def compact_json(self, start=0, end=-1):
         result_strings = []
         whitespace = [' ', '\t', '\n']
-        
+
         if end == -1:
             end = self.json_string_length
 
@@ -83,21 +83,37 @@ class json_processor:
         self.json_string_length = len(result)
         self.json_string = result
 
+    def fix_quotes(self, start=0, end=-1):
+        result_strings = [];
+        if end == -1:
+            end = self.json_string_length
+
+        for i in range(start, end):
+            current = self.json_string[i]
+            if(current=='\''):
+                result_strings.append('\"')
+            else:
+                result_strings.append(self.json_string[i])
+        self.json_string = "".join(result_strings)
+        self.json_string_length = len(self.json_string)
+
+
     def cleanup_json(self, start=0, end=-1):
-        compact_json()
-        indent_json()
+        self.compact_json()
+        self.fix_quotes()
+        self.indent_json()
 
     def print_json(self):
         print(self.json_string)
 
     def get_info(self):
-        return {"indent": self.indent, "lenght": self.json_string_length} 
-    
+        return {"indent": self.indent, "lenght": self.json_string_length}
+
     # Iterates over the file, looing for spaces or tabs. If one is found,
     # the function returns with the location of the first delimiter detected
     def detect_indents(self, start):
         pass
-    
+
     # Iterates over the file, looking for missing indents. If one is found,
     # return the location of the first inconsitency
     def detect_inconcistency(self, start):
@@ -113,7 +129,7 @@ def main():
     input_source = sys.argv[1]
     arguments = iter(sys.argv[2:])
     processor = json_processor()
-    
+
     while(True):
         try:
             current = next(arguments)
@@ -125,17 +141,16 @@ def main():
                 print("Summary of options: -p ")
                 # If the argument didn't match any option, try to parse directly from
                 # stream, if the flag is set. Otherwiseerwise, print an error and abort
-                
+
         # When the arguments have all been fished out of the iterator,
         # we break out of the loop
         except StopIteration:
             break;
-    
+
 
     json_string = processor.load_json(input_source)
     processor.set_indent('s', 4)
-    processor.compact_json()
-    processor.indent_json()
+    processor.cleanup_json()
     processor.print_json()
 
 main()
